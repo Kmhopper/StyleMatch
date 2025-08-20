@@ -1,0 +1,89 @@
+html, body {
+    background-color: #ffffff; /* Lys grå */
+    font-family: 'Arial', sans-serif; /* En ren og profesjonell font */
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+
+
+header {
+    background-color: #F5F5F5; /* Mørk blågrå */
+    color: grey;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 20px;
+    margin: 0; /* Fjern margin */
+    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+header a img {
+    width: 40px;
+    height: 40px;
+}
+
+header .btn-outline-dark {
+    background-color: white;
+    color: #2C3E50;
+    border: 1px solid #2C3E50;
+    border-radius: 5px;
+    transition: all 0.3s ease;
+}
+
+header .btn-outline-dark:hover {
+    background-color: #2C3E50;
+    color: white;
+}
+
+/* Generell stil for hele siden */
+.homepage {
+    display: grid;
+    grid-template-columns: 1fr; /* Full bredde */
+    gap: 20px;
+    padding: 20px; /* Mellomrom inne i innholdet */
+    margin: 0; /* Fjern margin */
+    background-color: white;
+}
+
+.homepage h1 {
+    font-family: 'Playfair Display', serif; /* Elegant serif font */
+    font-size: 2rem; /* Gjør overskriften større */
+    font-weight: bold;
+    color: #2C3E50;
+    line-height: 1.6; /* Gir bedre lesbarhet */
+    margin-bottom: 40px; /* Skaper rom under teksten */
+    text-align: center;
+  }
+
+/* Kortene */
+.category-card {
+    height: 200px; /* Juster høyden om ønsket */
+    background-color: lightslategray; /* Lys grå kort */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, background-color 0.3s ease;
+    cursor: pointer;
+}
+
+.category-card:hover {
+    transform: scale(1.05); /* Forstørr kortet ved hover */
+    background-color: lightblue; /* Gjør kortet mørkere ved hover */
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2); /* Mer fremtredende skygge */
+}
+
+/* Teksten i kortene */
+.category-title {
+    font-size: 2rem; /* Større tekst */
+    font-weight: bold;
+    font-family: 'Playfair Display', serif; /* Elegant font */
+    color: #2C3E50; /* Mørk tekst */
+    text-align: center;
+    text-transform: uppercase; /* Gjør teksten store bokstaver */
+    letter-spacing: 1px; /* Øk avstanden mellom bokstavene */
+}
+

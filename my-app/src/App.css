@@ -1,0 +1,128 @@
+html, body {
+  background-color: #bcbcbc; /* Lys grå */
+  font-family: 'Arial', sans-serif; /* En ren og profesjonell font */
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+
+
+header {
+  background-color: white; /* Mørk blågrå */
+  color: grey;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 20px;
+  margin: 0; /* Fjern margin */
+  box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+header .text-center {
+  flex-grow: 1; /* Sørger for at overskriften tar opp tilgjengelig plass */
+  text-align: center; /* Sentrer teksten */
+  margin: 0; /* Fjern eventuell margin */
+}
+
+header .btn-outline-dark {
+  background-color: white;
+  color: #2C3E50;
+  border: 1px solid #2C3E50;
+  border-radius: 5px;
+  transition: all 0.3s ease;
+}
+
+header .btn-outline-dark:hover {
+  background-color: #2C3E50;
+  color: white;
+}
+
+.container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto; /* Sentrer innholdet */
+  padding: 0 15px; /* Litt luft på sidene */
+  box-sizing: border-box; /* Inkluder padding i breddeberegningen */
+}
+
+header h1 {
+  font-family: 'Playfair Display', serif; /* Velg en elegant font */
+  font-size: 2rem; /* Gjør teksten større */
+  font-weight: bold; /* Tykk tekst */
+  text-align: center; /* Sentrer teksten */
+  margin: 0 auto; /* Sentrer horisontalt */
+  color: #2C3E50; /* Elegant mørk farge */
+}
+
+header h1 span {
+  display: block; /* For undertittel */
+  font-size: 1rem; /* Mindre skriftstørrelse */
+  font-weight: normal; /* Normal tykkelse */
+  font-style: italic; /* Gjør undertittel kursiv */
+  color: grey; /* Lysere grå farge */
+  margin-top: 5px; /* Avstand mellom overskrift og undertittel */
+}
+
+/* Generell stil for hele siden */
+.homepage {
+  display: grid;
+  grid-template-columns: 1fr; /* Full bredde */
+  gap: 20px;
+  padding: 20px; /* Mellomrom inne i innholdet */
+  margin: 0; /* Fjern margin */
+  background-color: #F5F5F5;
+}
+
+/* Produktkortene */
+.product-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%; /* Sørg for at kortet tar opp hele plassen */
+  border-radius: 10px;
+  overflow: hidden;
+  background-color: #ffffff;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  cursor: pointer;
+}
+
+.product-card:hover {
+  transform: scale(1.05); /* Forstørr kortet ved hover */
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* Bildene i kortet */
+.card-img-top {
+  width: 100%;
+  height: 100%; /* Dynamisk høyde */
+  object-fit: contain; /* Vis hele bildet */
+  border-bottom: 1px solid #ddd; /* Skille bilde fra innhold */
+}
+
+/* Kortinnhold */
+.card-body {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end; /* Plasser innhold nederst */
+  padding: 15px;
+  text-align: center;
+  flex-grow: 1; /* Sørger for at innholdet fyller tilgjengelig plass */
+}
+
+/* Tittel og pris */
+.card-title {
+  font-size: 1rem;
+  font-weight: bold;
+  color: #000;
+  margin-bottom: 10px;
+  background-color: #F0F8FF;
+}
+
+.card-text {
+  font-size: 0.9rem;
+  color: #000;
+  margin: 0;
+  background-color: #F0F8FF;
+}
