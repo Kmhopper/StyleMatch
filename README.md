@@ -31,6 +31,23 @@ filtrere på kategorier og **finne lignende produkter** ved å laste opp et bild
 
 --------------------------------------------------------------------------------
 
+# Forutsetninger
+- Node 18+
+- Python 3.10+ (for ML-tjenesten)
+- ETT av følgende for database:
+  - Docker Desktop (anbefalt), eller
+  - MySQL 8 lokalt + `mysql` klient på PATH
+
+# Miljøvariabler (backend/.env – eksempel)
+```ini
+DB_HOST=localhost
+DB_USER=root
+DB_PASSWORD=secret
+DB_NAME=clothing_data
+ML_URL=http://127.0.0.1:8000
+```
+
+--------------------------------------------------------------------------------
 # Rask oppstart (3 deler)
 
 > Kortversjon: kjør **én kommando**:
@@ -130,23 +147,6 @@ Begge skriptene:
 
 --------------------------------------------------------------------------------
 
-# Forutsetninger
-- Node 18+
-- Python 3.10+ (for ML-tjenesten)
-- ETT av følgende for database:
-  - Docker Desktop (anbefalt), eller
-  - MySQL 8 lokalt + `mysql` klient på PATH
-
-# Miljøvariabler (backend/.env – eksempel)
-```ini
-DB_HOST=localhost
-DB_USER=root
-DB_PASSWORD=secret
-DB_NAME=clothing_data
-ML_URL=http://127.0.0.1:8000
-```
-
---------------------------------------------------------------------------------
 
 # Scripts & kvalitet
 - CRA: `npm test`, `npm run build` i `my-app`
@@ -163,4 +163,4 @@ ML_URL=http://127.0.0.1:8000
 - **React på annen port:** PowerShell: `$env:PORT=3005; npm start`
 
 # Lisens
-MIT (forslag). Se `LICENSE`.
+MIT. Se `LICENSE`.
