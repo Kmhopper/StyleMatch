@@ -294,7 +294,9 @@ La `backend/.env` stå med `DB_HOST=127.0.0.1` (kun port‑mapping endres).
 2) **Lag backend‑miljøfil**
 ```powershell
 # Windows
-Copy-Item backend\.env.example backend\.env
+Copy-Item backend\env.example backend\.env
+
+Dersom dette ikke funker, lag en .env fil i backend og kopier over det som er i env.example
 ```
 ```bash
 # macOS/Linux
