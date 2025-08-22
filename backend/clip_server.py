@@ -15,12 +15,13 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Konfigurerer tilkobling til MySQL-databasen
-db = mysql.connector.connect(
-    host=os.getenv("DB_HOST"),
-    user=os.getenv("DB_USER"),
-    password=os.getenv("DB_PASSWORD"),
-    database=os.getenv("DB_NAME")
-)
+db = {
+    "host": os.getenv("DB_HOST", "127.0.0.1"),
+    "port": int(os.getenv("DB_PORT", "3306")),
+    "user": os.getenv("DB_USER", "root"),
+    "password": os.getenv("DB_PASSWORD", "root"),
+    "database": os.getenv("DB_NAME", "clothing_data")
+}
 
 # Liste over tabeller som inneholder produktdata
 TABLES = ["hm_products", "weekday_products", "zara_products", "follestad_products"]
@@ -45,7 +46,7 @@ class ClothingSegmenter:
         if len(predictions[0]['boxes']) > 0:
             box = predictions[0]['boxes'][0].cpu().numpy().astype(int)
             cropped_image = image.crop((box[0], box[1], box[2], box[3]))
-            return cropped_image
+            return cropped_image    
         else:
             return None
 
@@ -79,12 +80,7 @@ async def analyze_image(file: UploadFile = File(...)):
         user_vector = get_image_features(cropped_image).squeeze()
 
         # Kobler til databasen for å hente produktdata
-        conn = mysql.connector.connect(
-            host=os.getenv("DB_HOST"),
-            user=os.getenv("DB_USER"),
-            password=os.getenv("DB_PASSWORD"),
-            database=os.getenv("DB_NAME")
-        )
+        conn = mysql.connector.connect(**db)
         cursor = conn.cursor(dictionary=True)
 
         similar_products = []

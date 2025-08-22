@@ -1,9 +1,9 @@
 ﻿const express = require('express');
 const cors = require('cors');
-const mysql = require('mysql2');
 const multer = require('multer');
 const axios = require('axios');
 require('dotenv').config();
+const mysql = require('mysql2');
 
 const app = express();
 const PORT = 3001;
@@ -12,11 +12,12 @@ app.use(cors());
 
 // Opprett databaseforbindelse
 const db = mysql.createConnection({
-    host: process.env.DB_HOST,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
-});
+    host: process.env.DB_HOST|| '127.0.0.1',
+    port: Number(process.env.DB_PORT || 3306),
+    user: process.env.DB_USER || 'root',          
+    password: process.env.DB_PASSWORD || 'root',   
+    database: process.env.DB_NAME || 'clothing_data',      
+  });
 
 db.connect(err => {
     if (err) {
