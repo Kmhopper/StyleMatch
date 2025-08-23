@@ -189,10 +189,12 @@ Du kan sette opp databasen på to måter:
     wsl --install
     ```
     Start PC‑en på nytt om du blir bedt.
-  - Installer og start Docker Desktop for Windows:
+  - Installer og start Docker Desktop for Windows (Kjør dette i vanlig PowerShell):
     ```powershell
     winget install -e --id Docker.DockerDesktop
     ```
+  - Åpne docker desktop og skip inlogging (det er ikke nødvendig med bruker)
+  
   - I Docker Desktop → Settings → General: huk av **Use WSL 2 based engine**.
 
 - **macOS**
@@ -242,8 +244,8 @@ volumes:
 4) **Lag backend‑miljøfil**
 ```powershell
 # Windows
-Copy-Item backend\.env.example backend\.env
-# hvis det feiler: opprett backend\.env og lim inn innholdet fra .env.example
+Copy-Item backend\env.example backend\.env
+# hvis det feiler: opprett backend\.env og lim inn innholdet fra env.example
 ```
 ```bash
 # macOS/Linux
@@ -264,6 +266,8 @@ ML_URL=http://127.0.0.1:8000
 docker compose up -d
 ```
 Første gang importeres alle `.sql` fra `my-app/database_sample/` automatisk.
+
+Nå er databasen oppe å kjører!
 
 6) **Se logger/status (valgfritt)**
 ```bash
@@ -333,6 +337,7 @@ Start tjenestene i tre terminaler/faner:
 
 **ML‑tjeneste**
 ```bash
+cd backend
 python -m uvicorn clip_server:app --host 0.0.0.0 --port 8000
 ```
 
