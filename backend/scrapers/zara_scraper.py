@@ -21,9 +21,12 @@ driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), opti
 
 # Naviger til nettsiden
 urls = [
-    "https://www.zara.com/no/no/mann-salg-l7139.html?v1=2444848",
-    "https://www.zara.com/no/no/mann-salg-l7139.html?v1=2444333",
-    "https://www.zara.com/no/no/mann-salg-l7139.html?v1=2444334",
+    "https://www.zara.com/no/no/herre-tskjorter-l855.html?v1=2578528",
+    "https://www.zara.com/no/no/herre-skjorter-l737.html?v1=2579028",
+    "https://www.zara.com/no/no/herre-polos-l733.html?v1=2578030",
+    "https://www.zara.com/no/no/herre-bukser-l838.html?v1=2551442",
+    "https://www.zara.com/no/no/herre-denim-l1683.html?v1=2458835",
+    "https://www.zara.com/no/no/herre-sweatshirts-l821.html?v1=2579029",
 
 ]
 
