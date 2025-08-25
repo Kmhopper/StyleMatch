@@ -1,0 +1,28 @@
+.category-card {
+    cursor: pointer;
+    overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+  }
+  
+  .category-card:hover {
+    transform: scale(1.05);
+    box-shadow: 0px 8px 12px rgba(0, 0, 0, 0.2);
+  }
+  
+  .category-imageWrap {
+    height: 200px;         /* fast kort-høyde gir jevnt grid */
+    width: 100%;
+    overflow: hidden;
+    display: flex;         /* midtstill bilde */
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .category-img {
+    height: 100%;          /* fyll høyden på containeren */
+    width: auto;           /* bevar proporsjoner */
+    object-fit: cover;     /* beskjær heller enn å strekke */
+  }
+  
