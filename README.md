@@ -137,8 +137,7 @@ pip install -r requirements.txt
 
 > Kortversjon: kjør **én kommando**:
 > - **Mac/Linux:** `./run_all.sh`  (første gang: `chmod +x run_all.sh`)
-> - **Windows:** `run_all.bat` *eller* `.
-un_all.ps1`
+> - **Windows:** `.\run_all.bat`
 
 ### 1) ML‑tjeneste (Python)
 **macOS/Linux**
@@ -165,7 +164,7 @@ npm start
 ```
 
 ### Alternativer
-- `./run_all.sh` (Mac/Linux) / `run_all.bat` eller `run_all.ps1` (Windows) starter alle tre.
+- `./run_all.sh` (Mac/Linux) / `.\run_all.bat` (Windows) starter alle tre.
 - Sett ML‑URL i `backend/.env`:
 ```
 ML_URL=http://127.0.0.1:8000
