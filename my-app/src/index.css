@@ -1,13 +1,27 @@
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+/* ---- GLOBAL THEME ---- */
+:root {
+  --surface: #f8f7f5;        /* lys grå bakgrunn for hele siden */
+  --text: #1c1c1c;
+  --muted: #6b7280;
+  --border: rgba(28,28,28,0.08);
+
+  /* Brand – beige */
+  --brand: #d4a373;
+  --brand-light: #e6b98f;
+  --brand-dark: #b08968;
+  --brand-contrast: #ffffff;
+
+  --shadow: 0 10px 30px rgba(0,0,0,0.08);
+  --radius-lg: 18px;
+  --radius-md: 16px;
 }
 
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  background-color: var(--surface) !important; /* hele siden får samme grå */
+  color: var(--text);
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
