@@ -57,8 +57,7 @@ const Header = ({ onFilterChange }) => {
           />
         </Link>
 
-        {/* Sentrert overskrift */}
-        <h1 className="text-center">Velkommen til din stil!</h1>
+        
 
         {/* På alle sider UNNTATT forsiden: vis butikk-filtre */}
         {location.pathname !== '/' && (
