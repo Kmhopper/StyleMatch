@@ -1,8 +1,6 @@
-﻿// server.js
-require('dotenv').config();
+﻿require('dotenv').config();
 
 const express = require('express');
-const cors = require('cors');
 const multer = require('multer');
 const axios = require('axios');
 const mysql = require('mysql2/promise');
@@ -11,19 +9,10 @@ const FormData = require('form-data');
 const app = express();
 const PORT = Number(process.env.PORT || 3001);
 
-// -------------------- CORS --------------------
-const ALLOWED_ORIGINS = (process.env.CORS_ORIGINS || '')
-  .split(',')
-  .map(s => s.trim())
-  .filter(Boolean);
+// For CORS (Cross-Origin Resource Sharing) – tillater at frontend er på en annen port
+// (f.eks. React på localhost:3000) kan gjøre kall til API-et på port 3001. 
+app.use(cors());
 
-app.use(
-  cors(
-    ALLOWED_ORIGINS.length
-      ? { origin: ALLOWED_ORIGINS, credentials: false }
-      : {} // åpen for dev om ingen er satt
-  )
-);
 
 // -------------------- DB: pool --------------------
 const pool = mysql.createPool({
@@ -36,7 +25,7 @@ const pool = mysql.createPool({
   connectionLimit: 10,
 });
 
-// helsesjekk (frivillig)
+// Testkobling ved oppstart
 (async () => {
   try {
     const conn = await pool.getConnection();
@@ -68,7 +57,7 @@ function mapCategoryToMain(category) {
     'Hoodie': ['Hoodie', 'Hoodiessweatshirts'],
   };
 
-  if (Object.prototype.hasOwnProperty.call(categoryMapping, category)) {
+  if (Object.hasOwn(categoryMapping, category)) {
     return categoryMapping[category];
   }
   return [category];
