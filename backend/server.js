@@ -5,6 +5,7 @@ const multer = require('multer');
 const axios = require('axios');
 const mysql = require('mysql2/promise');
 const FormData = require('form-data');
+const cors = require('cors');
 
 const app = express();
 const PORT = Number(process.env.PORT || 3001);

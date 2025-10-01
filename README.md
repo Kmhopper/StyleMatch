@@ -1,4 +1,4 @@
-# Klesfinner – React + Express (+ Python ML)
+# StyleMatch – React + Express (+ Python ML)
 
 En nettapp som samler produkter fra flere klesbutikker og lar brukeren
 filtrere på kategorier og **finne lignende produkter** ved å laste opp et bilde.
@@ -92,82 +92,6 @@ pip3 --version
 ```bash
 cd my-app
 npm install bootstrap@5
-```
-
-## Miljøvariabler (backend/.env – eksempel)
-```ini
-DB_HOST=localhost
-DB_USER=root
-DB_PASSWORD=secret
-DB_NAME=clothing_data
-DB_PORT=3307
-ML_URL=http://127.0.0.1:8000
-```
-
---------------------------------------------------------------------------------
-
-## Installer Python‑avhengigheter (ML‑tjenesten)
-Kjør alt dette i `backend/`.
-
-### 1) Opprett og aktiver virtuelt miljø
-**Windows (PowerShell)**
-```powershell
-cd backend
-py -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install --upgrade pip
-```
-
-**macOS/Linux**
-```bash
-cd backend
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install --upgrade pip
-```
-
-### 2) Installer pakkene fra requirements.txt
-```bash
-pip install -r requirements.txt
-```
-
---------------------------------------------------------------------------------
-
-# Rask oppstart (3 deler)
-
-> Kortversjon: kjør **én kommando**:
-> - **Mac/Linux:** `./run_all.sh`  (første gang: `chmod +x run_all.sh`)
-> - **Windows:** `.\run_all.bat`
-
-### 1) ML‑tjeneste (Python)
-**macOS/Linux**
-```bash
-uvicorn clip_server:app --host 0.0.0.0 --port 8000
-```
-**Windows (PowerShell/CMD)**
-```powershell
-python -m uvicorn clip_server:app --host 0.0.0.0 --port 8000
-```
-
-### 2) Backend (Express)
-```bash
-cd backend
-npm install
-node server.js
-```
-
-### 3) Frontend (React)
-```bash
-cd my-app
-npm install
-npm start
-```
-
-### Alternativer
-- `./run_all.sh` (Mac/Linux) / `.\run_all.bat` (Windows) starter alle tre.
-- Sett ML‑URL i `backend/.env`:
-```
-ML_URL=http://127.0.0.1:8000
 ```
 
 --------------------------------------------------------------------------------
@@ -332,29 +256,73 @@ ML_URL=http://127.0.0.1:8000
 
 ### Etter at databasen er oppe (gjelder begge måter)
 
-Start tjenestene i tre terminaler/faner:
+--------------------------------------------------------------------------------
 
-**ML‑tjeneste**
+## Installer Python‑avhengigheter (ML‑tjenesten)
+Kjør alt dette i `backend/`.
+
+### 1) Opprett og aktiver virtuelt miljø
+**Windows (PowerShell)**
+```powershell
+cd backend
+py -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+```
+
+**macOS/Linux**
 ```bash
 cd backend
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+```
+
+### 2) Installer pakkene fra requirements.txt
+```bash
+pip install -r requirements.txt
+```
+--------------------------------------------------------------------------------
+
+⚠️ Viktig: Når du starter de tre tjenestene separat, åpne **ett nytt terminalvindu per tjeneste**, og pass på at du står i riktig mappe (`backend` eller `my-app`) før du kjører kommandoene.
+
+# Rask oppstart (3 deler)
+
+> Kortversjon: kjør **én kommando**:
+> - **Mac/Linux:** `./run_all.sh`  (første gang: `chmod +x run_all.sh`)
+> - **Windows:** `.\run_all.bat`
+
+Om du ønsker å kjøre de hver for seg kan du åpne tre ulike terminaler og kjøre følgende:
+
+### 1) ML‑tjeneste (Python)
+**Windows (PowerShell/CMD)**
+```powershell
+cd backend
+.\.venv\Scripts\Activate.ps1   # aktiver venv først
 python -m uvicorn clip_server:app --host 0.0.0.0 --port 8000
 ```
 
-**Backend**
+**macOS/Linux**
+```bash
+cd backend
+source .venv/bin/activate      # aktiver venv først
+uvicorn clip_server:app --host 0.0.0.0 --port 8000
+```
+
+
+### 2) Backend (Express)
 ```bash
 cd backend
 npm install
 node server.js
 ```
 
-**Frontend**
+### 3) Frontend (React)
 ```bash
 cd my-app
 npm install
 npm start
 ```
-
-Åpne: `http://localhost:3000`
 
 Porter i bruk: 3000 (frontend), 3001 (backend), 8000 (ML), 3306 eller 3307 (DB).
 
