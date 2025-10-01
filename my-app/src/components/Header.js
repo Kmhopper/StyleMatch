@@ -60,7 +60,7 @@ const Header = ({ onFilterChange }) => {
         
 
         {/* På alle sider UNNTATT forsiden: vis butikk-filtre */}
-        {location.pathname !== '/' && (
+        {location.pathname !== '/' && location.pathname !== '/find-similar' && (
           <div className="btn-group" role="group" aria-label="Butikker">
             {/* H&M */}
             <input

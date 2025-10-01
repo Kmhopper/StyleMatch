@@ -1,58 +1,80 @@
-﻿const express = require('express');
+﻿// server.js
+require('dotenv').config();
+
+const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
 const axios = require('axios');
-require('dotenv').config();
-const mysql = require('mysql2');
+const mysql = require('mysql2/promise');
+const FormData = require('form-data');
 
 const app = express();
-const PORT = 3001;
+const PORT = Number(process.env.PORT || 3001);
 
-app.use(cors()); // tillat kall fra frontend
+// -------------------- CORS --------------------
+const ALLOWED_ORIGINS = (process.env.CORS_ORIGINS || '')
+  .split(',')
+  .map(s => s.trim())
+  .filter(Boolean);
 
-// Opprett databaseforbindelse
-const db = mysql.createConnection({
+app.use(
+  cors(
+    ALLOWED_ORIGINS.length
+      ? { origin: ALLOWED_ORIGINS, credentials: false }
+      : {} // åpen for dev om ingen er satt
+  )
+);
+
+// -------------------- DB: pool --------------------
+const pool = mysql.createPool({
   host: process.env.DB_HOST || '127.0.0.1',
   port: Number(process.env.DB_PORT || 3306),
   user: process.env.DB_USER || 'root',
   password: process.env.DB_PASSWORD || 'root',
   database: process.env.DB_NAME || 'clothing_data',
+  waitForConnections: true,
+  connectionLimit: 10,
 });
 
-db.connect(err => {
-  if (err) {
-    console.error('Feil ved tilkobling til databasen:', err);
-    return;
+// helsesjekk (frivillig)
+(async () => {
+  try {
+    const conn = await pool.getConnection();
+    await conn.ping();
+    conn.release();
+    console.log('[DB] Tilkoblet (pool ok)');
+  } catch (e) {
+    console.error('[DB] Kunne ikke koble til:', e.message);
   }
-  console.log('Tilkoblet til databasen!');
+})();
+
+// -------------------- Opplasting --------------------
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB
 });
 
 // -------------------- Kategori-mapping --------------------
 function mapCategoryToMain(category) {
   const categoryMapping = {
     'T-skjorte': ['Tshirt', 'Tshirtstanks', 'Tskjorte', 'Tee', 'Top'],
-    'Bukse':     ['Bukser', 'Bukse', 'Trousers', 'Trouser', 'Pants', 'Sweatpants'],
-    'Jakke':     ['Jacket', 'Jakker', 'Jakke', 'Jacketscoats', 'Coat', 'Jacker'],
-    'Genser':    ['Sweater', 'Genser', 'Gensere', 'Cardigan'],
-    'Skjorte':   ['Skjorte', 'Shirt', 'Shirts', 'Sleeve'],
-    'Shorts':    ['Shorts'],
-    'Jeans':     ['Jeans'],
-    'Blazer':    ['Blazer', 'Blazerssuits'],
-    'Hoodie':    ['Hoodie', 'Hoodiessweatshirts'],
+    'Bukse': ['Bukser', 'Bukse', 'Trousers', 'Trouser', 'Pants', 'Sweatpants'],
+    'Jakke': ['Jacket', 'Jakker', 'Jakke', 'Jacketscoats', 'Coat', 'Jacker'],
+    'Genser': ['Sweater', 'Genser', 'Gensere', 'Cardigan'],
+    'Skjorte': ['Skjorte', 'Shirt', 'Shirts', 'Sleeve'],
+    'Shorts': ['Shorts'],
+    'Jeans': ['Jeans'],
+    'Blazer': ['Blazer', 'Blazerssuits'],
+    'Hoodie': ['Hoodie', 'Hoodiessweatshirts'],
   };
 
-  for (const mainCategory in categoryMapping) {
-    if (mainCategory === category) {
-      console.log(`Mapping funnet for kategori: ${mainCategory}`);
-      return categoryMapping[mainCategory];
-    }
+  if (Object.prototype.hasOwnProperty.call(categoryMapping, category)) {
+    return categoryMapping[category];
   }
-  console.log(`Ingen mapping funnet, returnerer original kategori: ${category}`);
   return [category];
 }
 
-// -------------------- /products (med whitelist) --------------------
-// Tillatte tabeller (whitelist). Viktig: tabellnavn kan ikke parameteriseres med '?'.
+// -------------------- Whitelist for tabeller --------------------
 const ALLOWED_TABLES = new Set([
   'hm_products',
   'weekday_products',
@@ -60,134 +82,145 @@ const ALLOWED_TABLES = new Set([
   'follestad_products',
 ]);
 
-app.get('/products', (req, res) => {
-  const { tables, category } = req.query;
-  if (!tables || !category) {
-    return res.status(400).send('Manglende tabeller eller kategori');
-  }
-
-  // Rens input og filtrer mot whitelist
-  const requested = String(tables)
-    .split(',')
-    .map(s => s.trim())
-    .filter(Boolean);
-
-  const tableList = requested.filter(t => ALLOWED_TABLES.has(t));
-  if (tableList.length === 0) {
-    return res.status(400).send('Ingen gyldige tabeller valgt');
-  }
-
-  const mappedCategories = mapCategoryToMain(category); // f.eks. ['Hoodie','Hoodiessweatshirts']
-  console.log(`Mapped kategorier: ${mappedCategories}`);
-
-  // Bygg UNION ALL-spørring: én SELECT per tabell, med (category LIKE ? OR ...).
-  // Bruk mysql.escapeId for å quote tabellnavn (belt & bukseseler — i tillegg til whitelist).
-  const queries = tableList
-    .map(table => {
-      const safeTable = mysql.escapeId(table); // -> f.eks. `hm_products`
-      const conditions = mappedCategories.map(() => 'category LIKE ?').join(' OR ');
-      return `SELECT * FROM ${safeTable} WHERE ${conditions}`;
-    })
-    .join(' UNION ALL ');
-
-  // PARAMETER-REKKEFØLGE: for hver TABELL → push ALLE kategoriene i samme rekkefølge
-  const parameters = [];
-  for (const _table of tableList) {
-    for (const cat of mappedCategories) {
-      parameters.push(`%${cat}%`);
+// -------------------- /products --------------------
+// Henter produkter fra whitelisted tabeller med enkel kategorifiltering (LIKE)
+app.get('/products', async (req, res) => {
+  try {
+    const { tables, category } = req.query;
+    if (!tables || !category) {
+      return res.status(400).send('Manglende tabeller eller kategori');
     }
-  }
 
-  console.log(`SQL-spørring: ${queries}`);
-  console.log(`Parametere: ${parameters}`);
+    const requested = String(tables)
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean);
 
-  db.query(queries, parameters, (err, results) => {
-    if (err) {
-      console.error('SQL-feil:', err.message);
-      return res.status(500).send('Feil ved henting av data');
+    const tableList = requested.filter(t => ALLOWED_TABLES.has(t));
+    if (tableList.length === 0) {
+      return res.status(400).send('Ingen gyldige tabeller valgt');
     }
-    res.json(results);
-  });
+
+    const mappedCategories = mapCategoryToMain(String(category));
+    const conditions = mappedCategories.map(() => 'category LIKE ?').join(' OR ');
+    const paramsPerTable = mappedCategories.map(c => `%${c}%`);
+
+    // Bygg UNION ALL spørring
+    const unionSql = tableList
+      .map(t => `SELECT id, name, price, image_url, product_link, category FROM \`${t}\` WHERE ${conditions}`)
+      .join(' UNION ALL ');
+
+    const params = [];
+    for (let i = 0; i < tableList.length; i++) {
+      params.push(...paramsPerTable);
+    }
+
+    const [rows] = await pool.query(unionSql, params);
+    res.json(rows);
+  } catch (err) {
+    console.error('/products feil:', err.message);
+    res.status(500).send('Feil ved henting av data');
+  }
 });
 
-// -------------------- /analyze --------------------
-const upload = multer({ storage: multer.memoryStorage() });
-
-// Kosinuslikhet (brukes etter at ML har levert feature-vektor)
-function cosineSimilarity(vec1, vec2) {
-  const dotProduct = vec1.reduce((sum, v, i) => sum + v * vec2[i], 0);
-  const magnitude1 = Math.sqrt(vec1.reduce((sum, v) => sum + v * v, 0));
-  const magnitude2 = Math.sqrt(vec2.reduce((sum, v) => sum + v * v, 0));
-  return dotProduct / (magnitude1 * magnitude2);
+// -------------------- Matching-hjelpere --------------------
+function dot(u, v) {
+  let s = 0;
+  // forutsetter like lengder og L2-normaliserte vektorer
+  for (let i = 0; i < u.length; i++) s += u[i] * v[i];
+  return s; // == cosine hvis normalisert
 }
 
-const FormData = require('form-data');
+// Holder topp K uten å sortere hele listen (bra nok for små K)
+function topK(items, k, scoreFn) {
+  const keep = []; // liten "min-heap" via sort; OK når k er lite
+  for (const it of items) {
+    const s = scoreFn(it);
+    if (Number.isNaN(s)) continue;
 
-app.post('/analyze', upload.single('image'), async (req, res) => {
-  console.log('Filen mottatt:', req.file);
-  if (!req.file) {
-    return res.status(400).json({ error: 'Ingen fil lastet opp' });
+    if (keep.length < k) {
+      keep.push({ s, it });
+      keep.sort((a, b) => a.s - b.s);
+    } else if (s > keep[0].s) {
+      keep[0] = { s, it };
+      keep.sort((a, b) => a.s - b.s);
+    }
   }
+  return keep.sort((a, b) => b.s - a.s).map(x => x.it);
+}
+
+// -------------------- /analyze --------------------
+// Tar imot bilde, kaller FastAPI for embedding, matcher mot DB, returnerer topp 9
+app.post('/analyze', upload.single('image'), async (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'Ingen fil lastet opp' });
 
   try {
-    // 1) Send bilde til Python/FastAPI (clip_server.py) → få feature-vektor
+    // 1) Send bilde til FastAPI (forutsetter at FastAPI kjører på denne adressen)
+    const fastApiUrl = process.env.ML_ANALYZE_URL || 'http://127.0.0.1:8000/analyze';
     const formData = new FormData();
-    formData.append('file', req.file.buffer, req.file.originalname);
+    formData.append('file', req.file.buffer, {
+      filename: req.file.originalname || 'upload.jpg',
+      contentType: req.file.mimetype || 'image/jpeg',
+    });
 
-    const response = await axios.post('http://127.0.0.1:8000/analyze', formData, {
+    const mlResp = await axios.post(fastApiUrl, formData, {
       headers: formData.getHeaders(),
+      timeout: Number(process.env.ML_TIMEOUT_MS || 120000),
+      maxContentLength: Infinity,
+      maxBodyLength: Infinity,
     });
 
-    const userVector = response.data.features;
+    const userVector = mlResp?.data?.features;
+    if (!Array.isArray(userVector) || userVector.length === 0) {
+      return res.status(502).json({ error: 'Ugyldig svar fra ML-tjenesten' });
+    }
 
-    // 2) Hent alle produkter som har lagret vektor (fra alle tabeller)
-    const query = `SELECT id, name, price, image_url, feature_vector, product_link
-                     FROM hm_products WHERE feature_vector IS NOT NULL
-                   UNION ALL
-                   SELECT id, name, price, image_url, feature_vector, product_link
-                     FROM weekday_products WHERE feature_vector IS NOT NULL
-                   UNION ALL
-                   SELECT id, name, price, image_url, feature_vector, product_link
-                     FROM zara_products WHERE feature_vector IS NOT NULL
-                   UNION ALL
-                   SELECT id, name, price, image_url, feature_vector, product_link
-                     FROM follestad_products WHERE feature_vector IS NOT NULL`;
+    // 2) Hent produkt-vektorer (kun nødvendige felt)
+    const sql = `
+      SELECT id, name, price, image_url, product_link, feature_vector
+        FROM hm_products WHERE feature_vector IS NOT NULL
+      UNION ALL
+      SELECT id, name, price, image_url, product_link, feature_vector
+        FROM weekday_products WHERE feature_vector IS NOT NULL
+      UNION ALL
+      SELECT id, name, price, image_url, product_link, feature_vector
+        FROM zara_products WHERE feature_vector IS NOT NULL
+      UNION ALL
+      SELECT id, name, price, image_url, product_link, feature_vector
+        FROM follestad_products WHERE feature_vector IS NOT NULL
+    `;
 
-    db.query(query, (err, results) => {
-      if (err) {
-        console.error('SQL-feil:', err);
-        return res.status(500).json({ error: 'Feil ved henting av data' });
-      }
+    const [rows] = await pool.query(sql);
 
+    // 3) Beregn score (dot) og plukk topp 9
+    const candidates = [];
+    for (const r of rows) {
       try {
-        // 3) Beregn likhet per produkt
-        const similarities = results.map(product => {
-          const productVector = JSON.parse(product.feature_vector);
-          if (productVector.length !== userVector.length) {
-            throw new Error('Dimensjonsfeil mellom bruker- og produktvektor');
-          }
-          const similarity = cosineSimilarity(userVector, productVector);
-          return { ...product, similarity };
-        });
-
-        // 4) Returner topp 9
-        const topMatches = similarities
-          .sort((a, b) => b.similarity - a.similarity)
-          .slice(0, 9);
-
-        res.json(topMatches);
-      } catch (vectorError) {
-        console.error('Feil under matching av vektorer:', vectorError);
-        res.status(500).json({ error: 'Feil under beregning av likheter.' });
+        const vec = JSON.parse(r.feature_vector);
+        if (!Array.isArray(vec) || vec.length !== userVector.length) continue; // dimensjonsmismatch
+        // OBS: forutsetter L2-normaliserte vektorer ved lagring og i ML
+        const score = dot(userVector, vec);
+        candidates.push({ ...r, similarity: score });
+      } catch (_) {
+        // ignorer rader med korrupt JSON
       }
-    });
-  } catch (error) {
-    console.error('Feil under bildeanalyse:', error.response?.data || error.message);
-    res.status(500).json({ error: 'Noe gikk galt. Prøv igjen senere.' });
+    }
+
+    const top9 = topK(candidates, 9, (p) => p.similarity);
+
+    return res.json(top9);
+  } catch (err) {
+    // FastAPI-feil eller DB-feil
+    const detail =
+      err.response?.data?.detail ||
+      err.response?.data?.error ||
+      err.message;
+    console.error('/analyze feil:', detail);
+    return res.status(500).json({ error: 'Noe gikk galt under bildeanalyse eller matching.' });
   }
 });
 
-// Start serveren
+// -------------------- Start --------------------
 app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
+  console.log(`API kjører på http://localhost:${PORT}`);
 });

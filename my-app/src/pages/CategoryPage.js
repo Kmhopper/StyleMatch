@@ -11,42 +11,56 @@ const CategoryPage = ({ selectedStores, categories }) => {
     const navigate = useNavigate();
 
     useEffect(() => {
+        let cancelled = false;
+        const storesSnapshot = [...selectedStores];
+
         const fetchProducts = async () => {
-            if (!selectedStores.length) {
-                setProducts([]); // Nullstill produkter hvis ingen butikker er valgt
-                return;
+            if (storesSnapshot.length === 0) {
+            setProducts([]);
+            return;
             }
 
             try {
-                const allProducts = []; // Midlertidig liste for alle produkter
-                for (const store of selectedStores) {
-                    const response = await axios.get('http://localhost:3001/products', {
-                        params: {
-                            tables: store,
-                            category: categoryName,
-                        },
-                    });
+            // Hent parallelt fra alle valgte butikker
+            const responses = await Promise.all(
+                storesSnapshot.map(store =>
+                axios.get('http://localhost:3001/products', {
+                    params: { tables: store, category: categoryName },
+                })
+                )
+            );
 
-                    // Filtrer bort produkter uten gyldige data
-                    const validProducts = response.data.filter(
-                        (product) =>
-                            product.image_url &&
-                            product.name &&
-                            product.price &&
-                            product.image_url.trim() !== '' // Pass på at URL ikke er tom
-                    );
+            // Slå sammen og merk produktene med kilde + unik key
+            const merged = responses.flatMap((res, idx) => {
+                const source = storesSnapshot[idx];
+                return res.data
+                .filter(
+                    p =>
+                    p.image_url &&
+                    p.name &&
+                    p.price &&
+                    p.image_url.trim() !== ''
+                )
+                .map(p => ({
+                    ...p,
+                    __source: source,
+                    // unik nøkkel på tvers av tabeller
+                    __key: `${source}_${p.id ?? p.product_link ?? p.image_url}`,
+                }));
+            });
 
-                    allProducts.push(...validProducts); // Legg til produkter i listen
-                }
 
-                setProducts(allProducts); // Oppdater state med alle produkter
+            if (!cancelled) setProducts(merged);
             } catch (error) {
-                console.error('Feil ved henting av produkter:', error);
+            if (!cancelled) console.error('Feil ved henting av produkter:', error);
             }
         };
 
         fetchProducts();
-    }, [categoryName, selectedStores]);
+        return () => {
+            cancelled = true;
+        };
+        }, [categoryName, selectedStores]);
 
     return (
         <div className="container">
@@ -57,13 +71,13 @@ const CategoryPage = ({ selectedStores, categories }) => {
                 {products.length > 0 ? (
                     products.map((product) => (
                         <div
-                            key={product.id}
+                            key={product.__key}
                             className="col-md-4 col-sm-6 mb-4"
                             onClick={() => product.product_link && window.open(product.product_link, '_blank')}
                         >
                             <div className="product-card">
                                 {product.image_url ? (
-                                    <img src={product.image_url} alt={product.name} className="card-img-top" />
+                                    <img src={product.image_url} alt={product.name} className="card-img-top" loading="lazy"/>
                                 ) : (
                                     <div className="placeholder-image">Bilde mangler</div>
                                 )}

@@ -1,150 +1,72 @@
-from fastapi import FastAPI, UploadFile
+# app/main.py
+from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel
 import torch
-import mysql.connector
-import json
 from PIL import Image
-from torchvision.models.detection import maskrcnn_resnet50_fpn
 import torchvision.transforms as T
+from torchvision.models.detection import maskrcnn_resnet50_fpn
 from transformers import CLIPProcessor, CLIPModel
-from fastapi import File
-import os
-from dotenv import load_dotenv
 
-# ------------------------------------------------------------
-# Miljø og databaseoppsett
-# ------------------------------------------------------------
-
-# Laster miljøvariabler fra .env-filen (DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME)
-load_dotenv()
-
-# Konfigurerer tilkobling til MySQL-databasen
-# Merk: dette er en enkel tilkobling per request-bruk; i produksjon er connection pool anbefalt.
-db = {
-    "host": os.getenv("DB_HOST", "127.0.0.1"),
-    "port": int(os.getenv("DB_PORT", "3306")),
-    "user": os.getenv("DB_USER", "root"),
-    "password": os.getenv("DB_PASSWORD", "root"),
-    "database": os.getenv("DB_NAME", "clothing_data")
-}
-
-# Liste over tabeller som inneholder produktdata (søkes i hver av disse)
-TABLES = ["hm_products", "weekday_products", "zara_products", "follestad_products"]
-
-# Oppretter FastAPI-applikasjonen
 app = FastAPI()
 
-# ------------------------------------------------------------
-# Segmentering (Mask R-CNN): finn og beskjær klær i brukerbildet
-# ------------------------------------------------------------
+# ---------- Oppstart: last modeller én gang ----------
+DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-class ClothingSegmenter:
-    """Wrapper rundt Mask R-CNN som finner en boks med klær og returnerer beskåret bilde."""
-    def __init__(self):
-        # Initialiserer Mask R-CNN-modellen for klessegmentering
-        # Kjøres på CPU som standard i denne koden; vil du bruke GPU: .to('cuda')
-        self.model = maskrcnn_resnet50_fpn(weights="DEFAULT")
-        self.model.eval()
-        self.transform = T.Compose([T.ToTensor()])  # PIL → Tensor
+MASKRCNN_SCORE_THRESH = 0.7
+mask_model = maskrcnn_resnet50_fpn(weights="DEFAULT").to(DEVICE).eval()
+to_tensor = T.ToTensor()
 
-    def segment_clothing(self, image, device):
-        """Segmenterer bildet og returnerer den beskjærte delen med klær (eller None hvis ingen funn)."""
-        image_tensor = self.transform(image).unsqueeze(0).to(device)
-        with torch.no_grad():
-            predictions = self.model(image_tensor)
-
-        # Hvis det finnes segmenteringsbokser, beskjær bildet med første boks
-        # (Alternativ: velg største boks eller høyest score.)
-        if len(predictions[0]['boxes']) > 0:
-            box = predictions[0]['boxes'][0].cpu().numpy().astype(int)
-            cropped_image = image.crop((box[0], box[1], box[2], box[3]))
-            return cropped_image    
-        else:
-            return None
-
-# ------------------------------------------------------------
-# CLIP: bilde → vektor
-# ------------------------------------------------------------
-
-# Initialiserer CLIP-modellen for bildeegenskaper (må matche prosessor)
-clip_model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
+clip_model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32").to(DEVICE).eval()
 clip_processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
 
-def get_image_features(image):
-    """Genererer L2-normaliserte bildeegenskaper ved hjelp av CLIP-modellen (shape: (1, D))."""
-    inputs = clip_processor(images=image, return_tensors="pt")
-    with torch.no_grad():
-        features = clip_model.get_image_features(**inputs)
-    # Normaliser for å kunne bruke cosine-likhet direkte
-    return features / features.norm(p=2, dim=-1, keepdim=True)
+# ---------- Hjelpefunksjoner ----------
+def crop_best_box(image_pil: Image.Image):
+    with torch.inference_mode():
+        img = to_tensor(image_pil).unsqueeze(0).to(DEVICE)
+        out = mask_model(img)[0]
+    boxes = out.get("boxes", [])
+    scores = out.get("scores", [])
+    if boxes is None or len(boxes) == 0:
+        return None
+    # velg beste boks over terskel
+    best = None
+    best_score = -1.0
+    for b, s in zip(boxes, scores):
+        s = float(s.item())
+        if s > MASKRCNN_SCORE_THRESH and s > best_score:
+            best = b
+            best_score = s
+    if best is None:
+        return None
+    x1, y1, x2, y2 = [int(v) for v in best.to("cpu").tolist()]
+    return image_pil.crop((x1, y1, x2, y2))
 
-# ------------------------------------------------------------
-# Endepunkt: /analyze
-# Flyt:
-#  1) Motta bilde (multipart/form-data)
-#  2) Segmenter (crop) klær fra bildet
-#  3) Lag CLIP-vektor for det beskårne bildet
-#  4) (Valgfritt) slå opp produkter og beregne likhet — i denne koden returneres bare brukerens vektor
-# ------------------------------------------------------------
+def clip_image_embedding(image_pil: Image.Image):
+    with torch.inference_mode():
+        inputs = clip_processor(images=image_pil, return_tensors="pt").to(DEVICE)
+        feats = clip_model.get_image_features(**inputs)
+        feats = feats / feats.norm(p=2, dim=-1, keepdim=True)  # L2-normaliser
+    return feats.squeeze(0).to("cpu")  # (D,)
 
-@app.post("/analyze")
-async def analyze_image(file: UploadFile = File(...)):
-    # Velger riktig enhet (GPU hvis tilgjengelig, ellers CPU)
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    segmenter = ClothingSegmenter()
+# ---------- Responsmodeller ----------
+class AnalyzeResponse(BaseModel):
+    features: list[float]
 
+class ErrorResponse(BaseModel):
+    error: str
+
+# ---------- Endepunkt ----------
+@app.post("/analyze", response_model=AnalyzeResponse, responses={400: {"model": ErrorResponse}, 500: {"model": ErrorResponse}})
+async def analyze(file: UploadFile = File(...)):
     try:
-        # Åpner og konverterer bildet til RGB-format
         image = Image.open(file.file).convert("RGB")
+    except Exception:
+        raise HTTPException(status_code=400, detail="Ugyldig bildefil.")
 
-        # Segmenter og beskjær ut klesområde
-        cropped_image = segmenter.segment_clothing(image, device)
+    cropped = crop_best_box(image)
+    if cropped is None:
+        raise HTTPException(status_code=400, detail="Ingen klær funnet i bildet.")
 
-        # Returnerer feil hvis ingen klær ble funnet
-        if cropped_image is None:
-            return JSONResponse(content={"error": "Ingen klær funnet i bildet."}, status_code=400)
-
-        # Genererer egenskapsvektor for det segmenterte bildet
-        # .squeeze() → gjør om fra (1, D) til (D,) for enklere JSON-serialisering
-        user_vector = get_image_features(cropped_image).squeeze()
-
-        # Hvis du også vil beregne likheter her:
-        #  - Koble til DB
-        #  - Hent feature_vector fra hver tabell
-        #  - Beregn cosine-likhet og returner topp N
-        # Nedenfor ligger grunnlaget for dette (kobling + loop), men funksjonen returnerer kun vektoren.
-
-        # Kobler til databasen (ikke brukt til matching her, men klart hvis du vil utvide)
-        conn = mysql.connector.connect(**db)
-        cursor = conn.cursor(dictionary=True)
-
-        similar_products = []  # beholdes tom i denne implementasjonen
-
-        # Itererer gjennom alle tabeller for å evt. hente produkter (her brukes ikke resultatet videre)
-        for table in TABLES:
-            cursor.execute(f"SELECT id, name, price, image_url, feature_vector FROM {table}")
-            products = cursor.fetchall()
-
-            for product in products:
-                # Hopper over produkter uten egenskapsvektor
-                if product["feature_vector"] is None:
-                    continue
-
-                # Laster produktets egenskapsvektor fra JSON-format
-                product_vector = torch.tensor(json.loads(product["feature_vector"]))
-                if user_vector.shape != product_vector.shape:
-                    # Dimensjonsmismatch → hopp over (kan skje hvis ulike CLIP-varianter er brukt)
-                    print(f"Dimensjonsfeil mellom vektorer: user_vector: {user_vector.shape}, product_vector: {product_vector.shape}")
-                    continue
-
-                # Her kunne du beregnet kosinuslikhet og bygget opp 'similar_products'
-                # similarity = torch.nn.functional.cosine_similarity(user_vector, product_vector, dim=0)
-                # similar_products.append({...})
-
-        # Sortering/returnering av liknende produkter er utelatt her.
-        # I stedet returneres kun feature-vektoren (som backend/Express bruker videre).
-        return {"features": user_vector.tolist()}
-
-    except Exception as e:
-        # Returnerer feil hvis noe går galt i segmentering/CLIP/IO
-        return JSONResponse(content={"error": str(e)}, status_code=500)
+    emb = clip_image_embedding(cropped)  # torch.Tensor (D,)
+    return AnalyzeResponse(features=emb.tolist())
