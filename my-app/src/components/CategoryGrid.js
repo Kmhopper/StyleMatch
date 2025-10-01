@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import './CategoryGrid.css'; // <— ny
+import './CategoryGrid.css'; 
 
 const CategoryGrid = ({ categories }) => {
   return (
