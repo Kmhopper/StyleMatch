@@ -1,128 +1,115 @@
-html, body {
-  background-color: #bcbcbc; /* Lys grå */
-  font-family: 'Arial', sans-serif; /* En ren og profesjonell font */
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+.app-shell {
+  min-height: 100vh;
+  position: relative;
+  overflow-x: clip;
 }
 
-
-
-header {
-  background-color: white; /* Mørk blågrå */
-  color: grey;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 20px;
-  margin: 0; /* Fjern margin */
-  box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
+.app-shell::before {
+  content: "";
+  position: absolute;
+  top: 10%;
+  left: 50%;
+  width: min(76vw, 980px);
+  height: min(76vw, 980px);
+  border-radius: 50%;
+  transform: translateX(-50%);
+  background: radial-gradient(
+    circle,
+    rgba(255, 255, 255, 0.4) 0%,
+    rgba(255, 255, 255, 0.1) 45%,
+    rgba(255, 255, 255, 0) 72%
+  );
+  pointer-events: none;
+  z-index: 0;
 }
 
-header .text-center {
-  flex-grow: 1; /* Sørger for at overskriften tar opp tilgjengelig plass */
-  text-align: center; /* Sentrer teksten */
-  margin: 0; /* Fjern eventuell margin */
+.app-shell__glow {
+  position: absolute;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.72;
 }
 
-header .btn-outline-dark {
-  background-color: white;
-  color: #2C3E50;
-  border: 1px solid #2C3E50;
-  border-radius: 5px;
-  transition: all 0.3s ease;
+.app-shell__glow--one {
+  top: -80px;
+  left: -100px;
+  width: 420px;
+  height: 420px;
+  background: radial-gradient(circle at 35% 35%, rgba(47, 102, 239, 0.38), rgba(47, 102, 239, 0));
 }
 
-header .btn-outline-dark:hover {
-  background-color: #2C3E50;
-  color: white;
+.app-shell__glow--two {
+  right: -180px;
+  bottom: -10px;
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle at 50% 50%, rgba(244, 111, 63, 0.3), rgba(244, 111, 63, 0));
 }
 
-.container {
-  width: 100%;
-  max-width: 1200px;
-  margin: 0 auto; /* Sentrer innholdet */
-  padding: 0 15px; /* Litt luft på sidene */
-  box-sizing: border-box; /* Inkluder padding i breddeberegningen */
+.app-main {
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 26px clamp(16px, 2.3vw, 36px) 70px;
+  position: relative;
+  z-index: 1;
 }
 
-header h1 {
-  font-family: 'Playfair Display', serif; /* Velg en elegant font */
-  font-size: 2rem; /* Gjør teksten større */
-  font-weight: bold; /* Tykk tekst */
-  text-align: center; /* Sentrer teksten */
-  margin: 0 auto; /* Sentrer horisontalt */
-  color: #2C3E50; /* Elegant mørk farge */
-}
-
-header h1 span {
-  display: block; /* For undertittel */
-  font-size: 1rem; /* Mindre skriftstørrelse */
-  font-weight: normal; /* Normal tykkelse */
-  font-style: italic; /* Gjør undertittel kursiv */
-  color: grey; /* Lysere grå farge */
-  margin-top: 5px; /* Avstand mellom overskrift og undertittel */
-}
-
-/* Generell stil for hele siden */
-.homepage {
+.not-found {
+  min-height: 58vh;
   display: grid;
-  grid-template-columns: 1fr; /* Full bredde */
-  gap: 20px;
-  padding: 20px; /* Mellomrom inne i innholdet */
-  margin: 0; /* Fjern margin */
-  background-color: #F5F5F5;
-}
-
-/* Produktkortene */
-.product-card {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  height: 100%; /* Sørg for at kortet tar opp hele plassen */
-  border-radius: 10px;
-  overflow: hidden;
-  background-color: #ffffff;
-  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  cursor: pointer;
-}
-
-.product-card:hover {
-  transform: scale(1.05); /* Forstørr kortet ved hover */
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
-}
-
-/* Bildene i kortet */
-.card-img-top {
-  width: 100%;
-  height: 100%; /* Dynamisk høyde */
-  object-fit: contain; /* Vis hele bildet */
-  border-bottom: 1px solid #ddd; /* Skille bilde fra innhold */
-}
-
-/* Kortinnhold */
-.card-body {
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end; /* Plasser innhold nederst */
-  padding: 15px;
+  place-content: center;
   text-align: center;
-  flex-grow: 1; /* Sørger for at innholdet fyller tilgjengelig plass */
+  gap: 10px;
 }
 
-/* Tittel og pris */
-.card-title {
-  font-size: 1rem;
-  font-weight: bold;
-  color: #000;
-  margin-bottom: 10px;
-  background-color: #F0F8FF;
-}
-
-.card-text {
-  font-size: 0.9rem;
-  color: #000;
+.not-found__code {
   margin: 0;
-  background-color: #F0F8FF;
+  color: var(--brand-700);
+  font-size: clamp(62px, 10vw, 112px);
+  line-height: 0.9;
+  font-family: var(--font-display);
+  font-weight: 800;
+}
+
+.not-found__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(30px, 4vw, 44px);
+}
+
+.not-found__text {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 1.02rem;
+}
+
+.route-loader {
+  min-height: 52vh;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 12px;
+  color: var(--text-muted);
+}
+
+.route-loader__pulse {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  border: 3px solid rgba(47, 102, 239, 0.2);
+  border-top-color: var(--brand-500);
+  animation: routeSpin 760ms linear infinite;
+}
+
+@keyframes routeSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 1024px) {
+  .app-shell::before,
+  .app-shell__glow {
+    display: none;
+  }
 }

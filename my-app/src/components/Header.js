@@ -1,124 +1,91 @@
-import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import '../App.css';
+import React, { useState } from "react";
+import { Link, useLocation } from "react-router-dom";
+import "./Header.css";
 
-/**
- * Header
- * Toppseksjon som:
- *  - viser logo og tittel
- *  - på forsiden ("/"): viser knapp til "Finn lignende produkter"
- *  - på andre sider: viser butikk-filtre (checkboxer) og sender valgene opp via onFilterChange
- *
- * Props:
- *  - onFilterChange: (selectedStores: string[]) => void
- */
+const STORE_OPTIONS = [
+  { id: "hm_products", label: "H&M" },
+  { id: "weekday_products", label: "Weekday" },
+  { id: "zara_products", label: "Zara" },
+  { id: "follestad_products", label: "Follestad" },
+];
+
 const Header = ({ onFilterChange }) => {
-  // Hvilke butikker brukeren har valgt i filteret (lokal UI-state)
   const [selectedStores, setSelectedStores] = useState([]);
-
-  // Brukes for å vite hvor i appen vi er (for betinget rendering)
   const location = useLocation();
+  const isCategoryPage = location.pathname.startsWith("/category/");
 
-  /**
-   * Håndterer klikk på en butikkscheckbox:
-   *  - legger til/fjerner id i selectedStores
-   *  - varsler forelderen via onFilterChange
-   */
   const handleCheckboxChange = (event) => {
     const { id, checked } = event.target;
-
-    // Kopi av nåværende utvalg (unngå å mutere eksisterende state)
     let updatedStores = [...selectedStores];
 
     if (checked) {
-      updatedStores.push(id);                // legg til valgt butikk
+      updatedStores.push(id);
     } else {
-      updatedStores = updatedStores.filter(  // fjern valgt butikk
-        (store) => store !== id
-      );
+      updatedStores = updatedStores.filter((store) => store !== id);
     }
 
-    setSelectedStores(updatedStores);        // oppdater lokal state
-    onFilterChange(updatedStores);           // send opp til forelderen (CategoryPage o.l.)
+    setSelectedStores(updatedStores);
+    onFilterChange(updatedStores);
   };
 
   return (
-    <header className="py-3 mb-4">
-      <div className="container d-flex justify-content-between align-items-center ">
-        {/* Logo som lenker hjem */}
-        <Link to="/" style={{ marginRight: 'auto' }}>
+    <header className="topbar">
+      <div className="topbar__inner">
+        <Link to="/" className="brand">
           <img
-            src={require('../images/fittedlogo.png')}
-            alt="Home"
-            style={{
-              width: '150px',
-              height: '100px',
-            }}
+            src={require("../images/fittedlogo.png")}
+            alt="Nordic Thread"
+            className="brand__logo"
           />
+          <div className="brand__copy">
+            <p className="brand__title">NORDIC THREAD</p>
+            <p className="brand__subtitle">One cart, many stores</p>
+          </div>
         </Link>
 
-        
-
-        {/* På alle sider UNNTATT forsiden: vis butikk-filtre */}
-        {location.pathname !== '/' && location.pathname !== '/find-similar' && (
-          <div className="btn-group" role="group" aria-label="Butikker">
-            {/* H&M */}
-            <input
-              type="checkbox"
-              className="btn-check"
-              id="hm_products"
-              autoComplete="off"
-              onChange={handleCheckboxChange}
-            />
-            <label className="btn btn-secondary" htmlFor="hm_products">
-              H&M
-            </label>
-
-            {/* Weekday */}
-            <input
-              type="checkbox"
-              className="btn-check"
-              id="weekday_products"
-              autoComplete="off"
-              onChange={handleCheckboxChange}
-            />
-            <label className="btn btn-secondary" htmlFor="weekday_products">
-              Weekday
-            </label>
-
-            {/* Zara */}
-            <input
-              type="checkbox"
-              className="btn-check"
-              id="zara_products"
-              autoComplete="off"
-              onChange={handleCheckboxChange}
-            />
-            <label className="btn btn-secondary" htmlFor="zara_products">
-              Zara
-            </label>
-
-            {/* Follestad */}
-            <input
-              type="checkbox"
-              className="btn-check"
-              id="follestad_products"
-              autoComplete="off"
-              onChange={handleCheckboxChange}
-            />
-            <label className="btn btn-secondary" htmlFor="follestad_products">
-              Follestad
-            </label>
-          </div>
-        )}
-
-        {/* Kun på forsiden: knapp som ruter til "Finn lignende produkter"-siden */}
-        {location.pathname === '/' && (
-          <Link to="/find-similar" className="btn btn-outline-dark">
-            Finn lignende produkter
+        <nav className="topbar__nav" aria-label="Hovednavigasjon">
+          <span className="topbar__drop">Spring Drop 26</span>
+          <Link
+            to="/"
+            className={`topbar__link ${location.pathname === "/" ? "is-active" : ""}`}
+          >
+            Forside
           </Link>
-        )}
+          <Link
+            to="/find-similar"
+            className={`topbar__link ${location.pathname === "/find-similar" ? "is-active" : ""}`}
+          >
+            Bilde-søk
+          </Link>
+        </nav>
       </div>
+
+      {isCategoryPage && (
+        <div className="store-filter" aria-label="Butikkfilter">
+          <p className="store-filter__title">Velg butikker</p>
+          <div className="store-filter__chips">
+            {STORE_OPTIONS.map((store) => {
+              const isChecked = selectedStores.includes(store.id);
+
+              return (
+                <label
+                  key={store.id}
+                  htmlFor={store.id}
+                  className={`store-chip ${isChecked ? "is-active" : ""}`}
+                >
+                  <input
+                    id={store.id}
+                    type="checkbox"
+                    checked={isChecked}
+                    onChange={handleCheckboxChange}
+                  />
+                  <span>{store.label}</span>
+                </label>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </header>
   );
 };

@@ -1,65 +1,64 @@
 import React, { useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import "./HamburgerMenu.css";
-import { useNavigate } from "react-router-dom";
 
-/**
- * HamburgerMenu
- * Viser en “skuff”-meny med kategorier. Menyen åpnes/lukkes lokalt i komponenten.
- *
- * Props:
- *  - categories: string[]  (listen som rendres som menyvalg)
- */
 const HamburgerMenu = ({ categories }) => {
-  // Lokal UI-state: om menyen er åpen/lukket
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-
-  // Hook fra react-router for programmatisk navigering
   const navigate = useNavigate();
+  const { categoryName } = useParams();
 
-  // Bytter mellom åpen/lukket meny
-  const toggleMenu = () => {
-    setIsMenuOpen(!isMenuOpen);
-  };
-
-  // Lukker menyen (brukes når man klikker utenfor menyen eller etter navigasjon)
   const closeMenu = () => {
     setIsMenuOpen(false);
   };
 
   return (
     <>
-      {/* Trigger-knappen (hamburger-ikonet) som åpner/lukker menyen */}
-      <button className="hamburger-button" onClick={toggleMenu}>
-        ☰
+      <button
+        type="button"
+        className={`drawer-toggle ${isMenuOpen ? "is-open" : ""}`}
+        onClick={() => setIsMenuOpen((open) => !open)}
+        aria-label="Vis kategorier"
+        aria-expanded={isMenuOpen}
+      >
+        <span />
+        <span />
+        <span />
       </button>
 
-      {/* Mørk overlay bak menyen. Klikk her => lukk menyen */}
       <div
-        className={`overlay ${isMenuOpen ? "active" : ""}`}
+        className={`drawer-overlay ${isMenuOpen ? "is-active" : ""}`}
         onClick={closeMenu}
-      ></div>
+        aria-hidden={!isMenuOpen}
+      />
 
-      {/* Selve meny-skuffen. Klassen 'active' styrer visningen via CSS */}
-      <div className={`hamburger-menu ${isMenuOpen ? "active" : ""}`}>
-        <h2>Kategorier</h2>
+      <aside className={`drawer ${isMenuOpen ? "is-active" : ""}`} aria-hidden={!isMenuOpen}>
+        <div className="drawer__head">
+          <p>Kategorier</p>
+          <button type="button" onClick={closeMenu} aria-label="Lukk meny">
+            x
+          </button>
+        </div>
 
-        {/* Map over kategorier-propen og lag én <li> per kategori */}
-        <ul>
-          {categories.map((category) => (
-            <li
-              key={category}
-              onClick={() => {
-                // Ved klikk: naviger til kategori-ruten...
-                navigate(`/category/${category}`);
-                // ...og lukk menyen etterpå
-                closeMenu();
-              }}
-            >
-              {category}
-            </li>
-          ))}
-        </ul>
-      </div>
+        <div className="drawer__list">
+          {categories.map((category) => {
+            const isActive = category === categoryName;
+
+            return (
+              <button
+                key={category}
+                type="button"
+                className={`drawer__item ${isActive ? "is-active" : ""}`}
+                onClick={() => {
+                  navigate(`/category/${category}`);
+                  closeMenu();
+                }}
+              >
+                {category}
+              </button>
+            );
+          })}
+        </div>
+      </aside>
     </>
   );
 };

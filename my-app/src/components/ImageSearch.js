@@ -1,129 +1,228 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import '../App.css';
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+import "./ImageSearch.css";
 
-/**
- * ImageSearch
- * Lar brukeren laste opp et bilde → sender til backend /analyze → viser topp-matchene.
- * Forventet backend-respons: Array av produkter [{ name, price, image_url, product_link, similarity }, ...]
- */
 const ImageSearch = () => {
-  // Lokal UI-state for skjemaet og resultatvisning
-  const [selectedFile, setSelectedFile] = useState(null);  // filen brukeren velger
-  const [results, setResults] = useState([]);              // søkeresultat fra backend
-  const [loading, setLoading] = useState(false);           // spinner/ventestatus
-  const [error, setError] = useState(null);                // feilmelding i UI
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState("");
+  const [results, setResults] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [isDragging, setIsDragging] = useState(false);
 
-  const navigate = useNavigate(); // (ikke brukt i dag, men OK å ha hvis du vil route videre senere)
+  useEffect(() => {
+    if (!selectedFile) {
+      setPreviewUrl("");
+      return;
+    }
 
-  // Når brukeren velger fil i <input type="file">
-  const handleFileChange = (event) => {
-    setSelectedFile(event.target.files[0]);
+    const objectUrl = URL.createObjectURL(selectedFile);
+    setPreviewUrl(objectUrl);
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [selectedFile]);
+
+  const updateFile = (file) => {
+    if (!file || !file.type.startsWith("image/")) {
+      return;
+    }
+    setSelectedFile(file);
+    setError("");
   };
 
-  /**
-   * Sender valgt bilde til backend som multipart/form-data.
-   * Viser loading, håndterer feil, og lagrer resultatlisten ved suksess.
-   */
+  const handleFileChange = (event) => {
+    updateFile(event.target.files?.[0]);
+  };
+
+  const handleDrop = (event) => {
+    event.preventDefault();
+    setIsDragging(false);
+    updateFile(event.dataTransfer.files?.[0]);
+  };
+
+  const handleDragOver = (event) => {
+    event.preventDefault();
+    if (!isDragging) {
+      setIsDragging(true);
+    }
+  };
+
+  const handleDragLeave = () => {
+    if (isDragging) {
+      setIsDragging(false);
+    }
+  };
+
   const handleSubmit = async (event) => {
-    event.preventDefault();              // ikke last inn siden på form-submit
+    event.preventDefault();
 
     if (!selectedFile) {
-      alert('Vennligst last opp et bilde.');
+      setError("Last opp et bilde før du starter søket.");
       return;
     }
 
     setLoading(true);
-    setError(null);
-
-    // Pakk filen inn i FormData slik backend kan lese den som "image"
+    setError("");
     const formData = new FormData();
-    formData.append('image', selectedFile);
+    formData.append("image", selectedFile);
 
     try {
-      console.log("Sender forespørsel til backend...");
-      const response = await axios.post('http://localhost:3001/analyze', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+      const response = await axios.post("http://localhost:3001/analyze", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
       });
-      console.log("Respons fra backend:", response.data);
 
-      // Forvent at backend returnerer en array av produkter
-      if (response.data && Array.isArray(response.data)) {
+      if (Array.isArray(response.data)) {
         setResults(response.data);
       } else {
-        setError('Ugyldig respons fra serveren.');
-        console.error('Ugyldig respons fra backend:', response.data);
+        setResults([]);
+        setError("Ugyldig respons fra serveren.");
       }
-    } catch (error) {
-      // Viser kort feilmelding til bruker; logger mer detaljert i konsoll
-      console.error('Feil ved opplastning:', error.response?.data || error.message);
-      setError('Noe gikk galt. Prøv igjen senere.');
+    } catch (requestError) {
+      console.error("Feil ved opplastning:", requestError.response?.data || requestError.message);
+      setResults([]);
+      setError("Noe gikk galt under analysen. Prøv igjen.");
     } finally {
-      setLoading(false); // skru av spinner uansett utfall
+      setLoading(false);
     }
   };
 
   return (
-    <div className="container mt-5">
-      <h2 className="text-center">Finn lignende produkter</h2>
+    <div className="image-search">
+      <section className="image-search__hero">
+        <p className="image-search__eyebrow">Visual product matching</p>
+        <h1>Finn lignende produkter med ett bilde</h1>
+        <p>
+          Last opp et bilde av plagget du liker, så finner vi produkter med samme uttrykk på tvers av butikkene.
+        </p>
+      </section>
 
-      {/* Skjema for å velge og sende inn bilde */}
-      <form onSubmit={handleSubmit} className="text-center">
-        <input
-          type="file"
-          accept="image/*"                // kun bilder
-          onChange={handleFileChange}
-          className="form-control-file mt-3"
-        />
-        <button type="submit" className="btn btn-primary mt-3">
-          Søk
-        </button>
-      </form>
+      <section className="image-search__layout">
+        <form className="upload-panel" onSubmit={handleSubmit}>
+          <input
+            id="image-upload"
+            type="file"
+            accept="image/*"
+            onChange={handleFileChange}
+            className="upload-panel__input"
+          />
 
-      {/* Tilbakemeldinger til bruker under/etter kall */}
-      {loading && <p className="text-center">Laster opp og analyserer bilde...</p>}
-      {error && <p className="text-danger text-center">{error}</p>}
+          <label
+            htmlFor="image-upload"
+            className={`upload-dropzone ${isDragging ? "is-dragging" : ""}`}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+          >
+            {previewUrl ? (
+              <img
+                src={previewUrl}
+                alt="Valgt plagg"
+                className="upload-dropzone__preview"
+                decoding="async"
+              />
+            ) : (
+              <>
+                <span className="upload-dropzone__title">Dra et bilde hit</span>
+                <span className="upload-dropzone__subtitle">eller klikk for å velge fil</span>
+              </>
+            )}
+          </label>
 
-      {/* Resultatgrid: klikker du på et kort åpnes produktsiden i ny fane */}
-      <div className="row mt-4">
-        {results.length > 0 ? (
-          results.map((result, index) => (
-            <div
-              key={index}
-              className="col-md-4 col-sm-6 mb-4"
+          <div className="upload-panel__actions">
+            <button type="submit" disabled={loading} className="upload-btn upload-btn--primary">
+              {loading ? "Analyserer..." : "Start søk"}
+            </button>
+            <button
+              type="button"
+              className="upload-btn upload-btn--ghost"
               onClick={() => {
-                if (result.product_link) {
-                  window.open(result.product_link, '_blank'); // åpne i ny fane
-                } else {
-                  alert('Ingen lenke tilgjengelig for dette produktet.');
-                }
+                setSelectedFile(null);
+                setResults([]);
+                setError("");
               }}
+              disabled={loading}
             >
-              <div className="product-card">
-                <img
-                  src={result.image_url}
-                  alt={result.name}
-                  className="card-img-top"
-                />
-                <div className="card-body">
-                  <h5 className="card-title">{result.name}</h5>
-                  <p className="card-text">Pris: {result.price} NOK</p>
-                  {/* Likhet → prosent (cosine similarity * 100, avrundet) */}
-                  <p className="card-text">
-                    Likhet: {Math.round(result.similarity * 100)}%
-                  </p>
-                </div>
-              </div>
-            </div>
-          ))
-        ) : (
-          // Tomtilstand: vis kun hvis vi ikke laster og ikke har feil
-          !loading &&
-          !error &&
-          <p className="text-center">Ingen resultater å vise.</p>
+              Nullstill
+            </button>
+          </div>
+
+          {selectedFile && (
+            <p className="upload-panel__filename">
+              Valgt fil: <strong>{selectedFile.name}</strong>
+            </p>
+          )}
+
+          {error && <p className="upload-panel__error">{error}</p>}
+        </form>
+
+        <aside className="image-search__tips">
+          <h2>Tips for bedre treff</h2>
+          <ul>
+            <li>Bruk et klart bilde med ett hovedplagg.</li>
+            <li>Unngå tung bakgrunn og flere personer i samme bilde.</li>
+            <li>Resultatene blir bedre når plagget er godt synlig.</li>
+          </ul>
+        </aside>
+      </section>
+
+      <section className="search-results">
+        <div className="search-results__head">
+          <h2>Treff</h2>
+          <span>{results.length} produkter</span>
+        </div>
+
+        {loading && <p className="search-results__status">Laster opp og analyserer bildet...</p>}
+
+        {!loading && results.length === 0 && !error && (
+          <p className="search-results__status">Ingen resultater enda. Last opp et bilde for å starte.</p>
         )}
-      </div>
+
+        {results.length > 0 && (
+          <div className="search-results__grid">
+            {results.map((result, index) => {
+              const similarity = Number.parseFloat(result.similarity);
+              const similarityLabel = Number.isFinite(similarity)
+                ? `${Math.round(similarity * 100)}% match`
+                : "Likhet ukjent";
+
+              return (
+                <article
+                  key={`${result.product_link ?? result.image_url}_${index}`}
+                  className={`search-card ${result.product_link ? "is-clickable" : ""}`}
+                  onClick={() =>
+                    result.product_link &&
+                    window.open(result.product_link, "_blank", "noopener,noreferrer")
+                  }
+                  role={result.product_link ? "link" : undefined}
+                  tabIndex={result.product_link ? 0 : -1}
+                  onKeyDown={(event) => {
+                    if (!result.product_link) {
+                      return;
+                    }
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      window.open(result.product_link, "_blank", "noopener,noreferrer");
+                    }
+                  }}
+                >
+                  <div className="search-card__media">
+                    <img
+                      src={result.image_url}
+                      alt={result.name}
+                      loading="lazy"
+                      decoding="async"
+                    />
+                    <span className="search-card__similarity">{similarityLabel}</span>
+                  </div>
+                  <div className="search-card__body">
+                    <h3>{result.name}</h3>
+                    <p>{result.price} NOK</p>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        )}
+      </section>
     </div>
   );
 };
