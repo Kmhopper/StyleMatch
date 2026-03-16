@@ -8,6 +8,7 @@ backend/node_modules/
 
 # Build/coverage
 my-app/build/
+my-app/.next/
 coverage/
 
 # Secrets/miljø
@@ -23,3 +24,6 @@ backend/uploads/*
 .DS_Store
 Thumbs.db
 .vscode/
+
+# Local migration backup
+my-app/src_legacy/

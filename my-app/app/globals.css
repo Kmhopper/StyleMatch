@@ -1,0 +1,85 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 33 28% 95%;
+  --foreground: 221 31% 16%;
+
+  --card: 0 0% 100%;
+  --card-foreground: 221 31% 16%;
+
+  --primary: 221 45% 25%;
+  --primary-foreground: 0 0% 100%;
+
+  --secondary: 35 29% 89%;
+  --secondary-foreground: 220 30% 22%;
+
+  --muted: 34 24% 91%;
+  --muted-foreground: 217 17% 37%;
+
+  --accent: 30 51% 84%;
+  --accent-foreground: 220 33% 18%;
+
+  --destructive: 0 72% 44%;
+  --destructive-foreground: 0 0% 100%;
+
+  --border: 33 20% 77%;
+  --input: 33 20% 77%;
+  --ring: 221 34% 34%;
+
+  --radius: 0.95rem;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+* {
+  @apply border-border;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  @apply bg-background text-foreground font-sans antialiased;
+  background-image:
+    radial-gradient(circle at 12% 8%, rgba(159, 159, 159, 0.16), transparent 54%),
+    radial-gradient(circle at 88% 0%, rgba(194, 187, 178, 0.2), transparent 47%),
+    linear-gradient(180deg, #f2efe9 0%, #ece8e1 43%, #e6e1d8 100%);
+  line-height: 1.5;
+  text-rendering: optimizeLegibility;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  background: radial-gradient(circle at 50% -25%, rgba(255, 255, 255, 0.75), transparent 62%);
+  opacity: 0.55;
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  background-image: radial-gradient(rgba(35, 39, 45, 0.04) 0.7px, transparent 0.7px);
+  background-size: 3px 3px;
+  mix-blend-mode: multiply;
+  opacity: 0.16;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}

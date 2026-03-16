@@ -3,17 +3,20 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
-import mysql.connector
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import ElementClickInterceptedException
 from time import sleep
+import sys
 import os
-from dotenv import load_dotenv
+
+# Legg til backend-mappen i Python-path
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from database.db_connection import save_products
 
 # Sett opp WebDriver
 options = Options()
-options.add_argument("--headless")
+# options.add_argument("--headless")  # Midlertidig deaktivert for debugging
 options.add_argument("--disable-gpu")
 options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
 
@@ -74,16 +77,45 @@ try:
 
             previous_count = current_count
 
-
+        # Vent litt ekstra etter siste scroll for å sikre at alt er lastet
+        sleep(2)
+        print(f"Fant totalt {current_count} produkter på siden.")
+        
+        # Scroll tilbake til toppen
+        driver.execute_script("window.scrollTo(0, 0);")
+        sleep(1)
 
         # Hent produkter fra siden
         articles = driver.find_elements(By.CSS_SELECTOR, "div[data-product-listing-result-id]")
 
-        for article in articles:
+        for idx, article in enumerate(articles):
             try:
-                # Navn
-                product_name_element = article.find_element(By.XPATH, ".//h3[@class='title']")
-                product_name = product_name_element.text or "Ingen navn"
+                # Scroll produktet inn i viewport for å trigge lazy loading
+                driver.execute_script("arguments[0].scrollIntoView({block: 'center', behavior: 'smooth'});", article)
+                sleep(2)  # Øk ventetiden ytterligere
+                
+                # Navn - prøv flere metoder
+                product_name = "Ingen navn"
+                
+                # Metode 1: Hent fra link title (mest pålitelig basert på test)
+                try:
+                    links = article.find_elements(By.CSS_SELECTOR, "a[title]")
+                    for link in links:
+                        title = link.get_attribute("title")
+                        if title and "Legg" not in title and "ønskeliste" not in title and "handlekurv" not in title and title.strip():
+                            product_name = title.strip()
+                            break
+                except Exception as e:
+                    print(f"Produkt {idx}: Kunne ikke hente fra link title: {e}")
+                
+                # Metode 2: Hvis fortsatt "Ingen navn", prøv h3.title
+                if product_name == "Ingen navn":
+                    try:
+                        product_name_element = article.find_element(By.CSS_SELECTOR, "h3.title")
+                        if product_name_element.text.strip():
+                            product_name = product_name_element.text.strip()
+                    except Exception as e:
+                        print(f"Produkt {idx}: Kunne ikke hente fra h3.title: {e}")
 
                 # ID
                 product_id = article.get_attribute("data-product-listing-result-id") or "Ingen ID"
@@ -91,22 +123,28 @@ try:
                 # Kategori
                 category = extract_category_from_url(url)
 
-                # Pris
+                # Pris - søk i price div
                 try:
                     # Først sjekk om det finnes en nedsatt pris
-                    sale_price_element = article.find_element(By.XPATH, ".//ins[@class='price-sale font-weight-bold']")
-                    price = sale_price_element.text.strip().replace("–", "").replace(",", ".").strip()
+                    sale_price_element = article.find_element(By.CSS_SELECTOR, "div.price ins.price-sale")
+                    price_text = sale_price_element.text.strip()
                 except:
                     # Hvis ikke, bruk den vanlige prisen
                     try:
-                        price_element = article.find_element(By.XPATH, ".//div[contains(@class, 'price-regular')]")
-                        price = price_element.text.strip().replace("–", "").replace(",", ".").strip()
+                        price_element = article.find_element(By.CSS_SELECTOR, "div.price-regular")
+                        price_text = price_element.text.strip()
                     except:
-                        price = "0.00"
+                        price_text = "0"
+                        print(f"Kunne ikke finne pris for produkt")
+                
+                # Rens og konverter pris
                 try:
-                    price = float(price)
+                    # Fjern "kr", komma, mellomrom og andre tegn, beholde bare tall og punktum
+                    price_text = price_text.replace("kr", "").replace(",", "").replace("–", "").replace(" ", "").strip()
+                    price = float(price_text) if price_text else 0.00
                 except ValueError:
                     price = 0.00  # Hvis noe går galt, sett pris til 0
+                    print(f"Kunne ikke konvertere pris: {price_text}")
 
 
                 # Bilde-URL
@@ -143,46 +181,21 @@ try:
 
     driver.quit()
 
-    load_dotenv()  # Leser inn .env-fila
+    # Forbered data for database (konverter fra dict til tupler)
+    product_data = [
+        (
+            product['product_id'],
+            product['name'],
+            product['category'],
+            product['price'],
+            product['image_url'],
+            product['product_link']
+        )
+        for product in all_products
+    ]
 
-    db = mysql.connector.connect(
-        host=os.getenv("DB_HOST"),
-        user=os.getenv("DB_USER"),
-        password=os.getenv("DB_PASSWORD"),
-        database=os.getenv("DB_NAME")
-    )
-
-    cursor = db.cursor()
-
-    # Sett inn data i tabellen
-    insert_query = """
-    INSERT INTO follestad_products (product_id, name, category, price, image_url, product_link)
-    VALUES (%s, %s, %s, %s, %s, %s)
-    ON DUPLICATE KEY UPDATE
-        category = VALUES(category),
-        price = VALUES(price),
-        image_url = VALUES(image_url),
-        product_link = VALUES(product_link);
-    """
-
-    for product in all_products:
-        try:
-            cursor.execute(insert_query, (
-                product['product_id'],
-                product['name'],
-                product['category'],
-                product['price'],
-                product['image_url'],
-                product['product_link']
-            ))
-            print(f"Lagrer produkt: {product['name']} med lenke {product['product_link']}")
-        except mysql.connector.Error as db_err:
-            print(f"Databasefeil for {product['name']}: {db_err}")
-
-    db.commit()
-    cursor.close()
-    db.close()
-
+    # Lagre produkter ved hjelp av db_connection
+    save_products(product_data, 'follestad_products')
     print("Dataene er lagret eller oppdatert i databasen!")
 
 except Exception as e:

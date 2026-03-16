@@ -3,12 +3,15 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
-import mysql.connector
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from time import sleep
+import sys
 import os
-from dotenv import load_dotenv
+
+# Legg til backend-mappen i Python-path
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from database.db_connection import save_products
 
 
 # Sett opp WebDriver
@@ -83,13 +86,13 @@ try:
         WebDriverWait(driver, 10).until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, "[data-productid]")))
 
         articles = driver.find_elements(By.CSS_SELECTOR, "[data-productid]")
+        print(f"Fant {len(articles)} produkter på siden")
 
         # Hent data
-
         for idx, article in enumerate(articles, start=1):
             try:
-                driver.execute_script("arguments[0].scrollIntoView();", article)
-                sleep(1)  # Vent litt for å sikre at alt er lastet
+                driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", article)
+                sleep(0.2)  # Optimalisert til 0.2 sekunder - god balanse mellom hastighet og bildelasting
 
                 #Navn
                 product_name = article.find_element(By.XPATH, ".//a[@class='product-link _item product-grid-product-info__name link']").text
@@ -149,46 +152,21 @@ try:
 
     driver.quit()
 
-    load_dotenv()  # Leser inn .env-fila
+    # Konverter produktene til riktig format for save_products
+    products_to_save = [
+        (
+            product['product_id'],
+            product['name'],
+            product['category'],
+            product['price'],
+            product['image_url'],
+            product['product_link']
+        )
+        for product in all_products
+    ]
 
-    db = mysql.connector.connect(
-        host=os.getenv("DB_HOST"),
-        user=os.getenv("DB_USER"),
-        password=os.getenv("DB_PASSWORD"),
-        database=os.getenv("DB_NAME")
-    )
-
-    cursor = db.cursor()
-
-    # Sett inn data i tabellen
-    insert_query = """
-    INSERT INTO zara_products (product_id, name, category, price, image_url, product_link)
-    VALUES (%s, %s, %s, %s, %s, %s)
-    ON DUPLICATE KEY UPDATE
-        category = VALUES(category),
-        price = VALUES(price),
-        image_url = VALUES(image_url),
-        product_link = VALUES(product_link);
-    """
-
-    for product in all_products:
-        try:
-            cursor.execute(insert_query, (
-                product['product_id'],
-                product['name'],
-                product['category'],
-                product['price'],
-                product['image_url'],
-                product['product_link']
-            ))
-            print(f"Lagrer produkt: {product['name']} med lenke {product['product_link']}")
-        except mysql.connector.Error as db_err:
-            print(f"Databasefeil for {product['name']}: {db_err}")
-
-    db.commit()
-    cursor.close()
-    db.close()
-
+    # Lagre produkter i databasen ved hjelp av db_connection.py
+    save_products(products_to_save, "zara_products")
     print("Dataene er lagret eller oppdatert i databasen!")
 
 except Exception as e:

@@ -17,4 +17,4 @@ REM ---- 2) Backend (Express) ----
 start "Backend (Express)" cmd /k "cd /d backend && npm install && node server.js"
 
 REM ---- 3) Frontend (React) ----
-start "Frontend (React)" cmd /k "cd /d my-app && npm install && npm start"
+start "Frontend (React)" cmd /k "cd /d my-app && npm install && npm run dev"

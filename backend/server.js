@@ -47,13 +47,13 @@ const upload = multer({
 // -------------------- Kategori-mapping --------------------
 function mapCategoryToMain(category) {
   const categoryMapping = {
-    'T-skjorte': ['Tshirt', 'Tshirtstanks', 'Tskjorte', 'Tee', 'Top'],
+    'T-skjorte': ['Tshirt', 'Tshirtstanks', 'Tskjorte', 'Tee', 'Top', 'Tops', 'T-shirt', 'T-shirts', 'Polo', 'Polos'],
     'Bukse': ['Bukser', 'Bukse', 'Trousers', 'Trouser', 'Pants', 'Sweatpants'],
-    'Jakke': ['Jacket', 'Jakker', 'Jakke', 'Jacketscoats', 'Coat', 'Jacker'],
-    'Genser': ['Sweater', 'Genser', 'Gensere', 'Cardigan'],
+    'Jakke': ['Jacket', 'Jakker', 'Jakke', 'Jacketscoats', 'Coat', 'Jacket'],
+    'Genser': ['Sweater', 'Genser', 'Gensere', 'Cardigan', 'Jumpersweatshirts', 'Sweatshirts', 'Sweatshirt'],
     'Skjorte': ['Skjorte', 'Shirt', 'Shirts', 'Sleeve'],
     'Shorts': ['Shorts'],
-    'Jeans': ['Jeans'],
+    'Jeans': ['Jeans', "Denim"],
     'Blazer': ['Blazer', 'Blazerssuits'],
     'Hoodie': ['Hoodie', 'Hoodiessweatshirts'],
   };
