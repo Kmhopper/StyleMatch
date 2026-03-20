@@ -43,41 +43,41 @@ export function CategoryExperience({ categoryName, categories }) {
   }, [activeStoreNames, selectedStores.length]);
 
   return (
-    <div className="space-y-12 pb-8 md:space-y-14 md:pb-12">
-      <section className="rounded-[2rem] border border-[#dacfc2] bg-[linear-gradient(165deg,rgba(251,248,243,0.96)_0%,rgba(244,238,230,0.94)_100%)] px-6 py-7 shadow-[0_26px_50px_rgba(56,44,30,0.12)] md:px-9 md:py-9">
-        <div className="flex flex-wrap items-start justify-between gap-7">
-          <div className="max-w-[46rem] space-y-3">
-            <p className="text-[0.67rem] uppercase tracking-[0.26em] text-[#786d61]">Live katalog på tvers av butikker</p>
-            <h1 className="font-display text-[3rem] leading-[0.88] text-[#2a241f] md:text-[4.2rem]">
+    <div className="space-y-8 pb-8 md:space-y-10 md:pb-12">
+      <section className="rounded-[1.15rem] border border-[#d9cec1] bg-[linear-gradient(160deg,#faf7f2_0%,#f3ede4_100%)] px-4 py-4 shadow-[0_10px_24px_rgba(56,44,30,0.08)] md:px-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="space-y-1">
+            <p className="text-[0.62rem] uppercase tracking-[0.22em] text-[#7b6f62]">Resultater</p>
+            <h1 className="font-display text-[1.7rem] leading-[0.95] text-[#2a241f] md:text-[2rem]">
               {categoryName}
             </h1>
-            <p className="max-w-2xl text-[1.05rem] leading-relaxed text-[#655e54]">
+            <p className="max-w-xl text-sm text-[#655e54]">
               Velg butikker i filterlinjen over. Resultatene oppdateres automatisk med samme kategori og valgte butikker.
             </p>
           </div>
 
-          <div className="flex w-full flex-wrap items-center justify-between gap-3 sm:w-auto sm:flex-col sm:items-end">
+          <div className="flex flex-wrap items-center gap-2">
             <CategorySheet categories={categories} currentCategory={categoryName} />
-            <span className="inline-flex rounded-full bg-[#5a4a38] px-3.5 py-1.5 text-sm font-semibold text-[#f7f2ea] shadow-[0_10px_24px_rgba(56,44,30,0.28)]">
+            <span className="inline-flex rounded-full border border-[#ccbca8] bg-[#f5ede2] px-3 py-1.5 text-[0.72rem] font-semibold text-[#584c3f]">
               {loading ? "Laster..." : `${products.length} produkter`}
             </span>
           </div>
         </div>
 
-        <div className="mt-8 h-px w-full bg-[#ddd3c7]" />
+        <div className="mt-3 h-px w-full bg-[#e0d7cb]" />
 
-        <div className="mt-4 flex flex-wrap items-center gap-2.5">
+        <div className="mt-3 flex flex-wrap items-center gap-2">
           {activeStoreNames.length > 0 ? (
             activeStoreNames.map((storeName) => (
               <span
                 key={storeName}
-                className="rounded-full border border-[#cebfae] bg-[#f5eee4] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.13em] text-[#5f564b]"
+                className="rounded-md border border-[#d2c4b3] bg-[#f6f0e7] px-2.5 py-1 text-[0.68rem] font-medium text-[#5d5347]"
               >
                 {storeName}
               </span>
             ))
           ) : (
-            <span className="rounded-full border border-[#d4c7b7] bg-[#f4ece2] px-3 py-1.5 text-xs font-semibold text-[#675d52]">
+            <span className="rounded-md border border-[#d2c4b3] bg-[#f6f0e7] px-2.5 py-1 text-[0.68rem] font-medium text-[#5d5347]">
               {activeStoresLabel}
             </span>
           )}
@@ -211,14 +211,14 @@ function StatePanel({ title, text, tone = "default" }) {
   return (
     <section
       className={cn(
-        "rounded-[1.7rem] border px-8 py-16 text-center shadow-[0_18px_38px_rgba(56,44,30,0.1)] md:py-20",
+        "rounded-[1.1rem] border px-6 py-10 text-center shadow-[0_12px_26px_rgba(56,44,30,0.08)] md:py-12",
         toneClass
       )}
     >
-      <h2 className="font-display text-[3rem] leading-[0.92] text-[#2a241f] md:text-[3.7rem]">
+      <h2 className="font-display text-[2rem] leading-[0.95] text-[#2a241f] md:text-[2.3rem]">
         {title}
       </h2>
-      <p className="mx-auto mt-4 max-w-xl text-[1rem] text-[#655d52]">{text}</p>
+      <p className="mx-auto mt-2 max-w-xl text-sm text-[#655d52]">{text}</p>
     </section>
   );
 }
@@ -252,3 +252,4 @@ function ProductSkeletonGrid() {
     </section>
   );
 }
+

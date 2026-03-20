@@ -28,7 +28,7 @@ export function HomeExperience() {
           images: [
             { src: category.image, alt: `${category.name} studio`, fit: "contain" },
             {
-              src: `/images/category-set-v2/${category.slug}.jpg`,
+              src: `/images/category-set-v4/${category.slug}.jpg`,
               alt: `${category.name} editorial`,
               fit: "cover",
             },
@@ -44,15 +44,15 @@ export function HomeExperience() {
         mediaType="image"
         mediaSrc="/images/home-hero/Proff-hero-uten-tekst.png"
         heroOverlay={
-          <div className="max-w-[18ch] md:ml-[18vw] md:max-w-[17ch] md:-translate-y-[10vh] lg:ml-[20vw] lg:-translate-y-[12vh] xl:ml-[22vw] xl:-translate-y-[13vh]">
-            <p className="text-[0.68rem] md:ml-[0.5vw] uppercase tracking-[0.24em] text-white/78">Fitted</p>
+          <div className="max-w-[18ch] -translate-y-[132px] md:ml-[220px] md:max-w-[17ch] md:-translate-y-[124px]">
+            <p className="text-[0.68rem] md:ml-[6px] uppercase tracking-[0.24em] text-white/78">Fitted</p>
             <h1 className="mt-3 font-display text-[2.6rem] leading-[0.9] text-white sm:text-[3.25rem] md:text-[4.15rem]">
               <span className="[text-shadow:0_8px_22px_rgba(0,0,0,0.34)]">Style made </span>
               <RotatingText
                 words={["Simple", "Curated", "Calm", "Effortless"]}
                 mode="fade"
                 interval={2200}
-                className="text-[#dcc3a5] [text-shadow:none]"
+                className="text-[#eebc8d] [text-shadow:none]"
               />
             </h1>
           </div>
@@ -151,14 +151,10 @@ export function HomeExperience() {
       <section ref={categoriesRef} className="space-y-5">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <p className="text-xs uppercase tracking-[0.22em] text-[#7a6f63]">KATEGORIOVERSIKT</p>
             <h2 className="mt-2 font-display text-[3.1rem] leading-[0.9] text-[#2a241f] sm:text-[4.2rem]">
-              Finn kategori raskt
+              Kategorioversikt
             </h2>
           </div>
-          <p className="rounded-full border border-[#d3cec8] bg-[#efeeeb] px-4 py-1.5 text-xs font-medium tracking-[0.12em] text-[#6a6156]">
-            9 KATEGORIER
-          </p>
         </div>
         <RevealImageList
           items={categoryRevealItems}

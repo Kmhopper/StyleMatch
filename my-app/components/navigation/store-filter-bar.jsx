@@ -100,16 +100,16 @@ export function StoreFilterBar() {
 
                 <span
                   className={cn(
-                    "grid h-7 w-7 place-items-center rounded-full border transition-all duration-300",
+                    "grid h-5 w-5 place-items-center rounded-full border transition-all duration-300",
                     checked
                       ? "border-white/70 bg-white/15 text-white"
                       : "border-[#948570] bg-white/75 text-[#847460] group-hover:border-[#786651] group-hover:text-[#5f4d37]"
                   )}
                 >
                   {checked ? (
-                    <Check className="h-4 w-4" />
+                    <Check className="h-3 w-3" />
                   ) : (
-                    <span className="h-2 w-2 rounded-full bg-current/85" />
+                    <span className="h-1.5 w-1.5 rounded-full bg-current/85" />
                   )}
                 </span>
 

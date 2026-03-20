@@ -106,7 +106,7 @@ export default function ScrollExpansionHero({
         <motion.div
           className="absolute inset-0 z-0"
           initial={{ opacity: 0 }}
-          animate={{ opacity: 1 - easedProgress * 0.9 }}
+          animate={{ opacity: 1 - easedProgress }}
           transition={{ duration: 0.15 }}
         >
           {bgImageSrc ? (

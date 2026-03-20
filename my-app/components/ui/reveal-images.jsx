@@ -68,8 +68,7 @@ export function RevealImageList({ items, onSelect, className }) {
         className
       )}
     >
-      <p className="text-xs uppercase tracking-[0.2em] text-[#6b7281]">Kategorioversikt</p>
-      <div className="mt-2">
+      <div>
         {items.map((item) => (
           <RevealImageListItem key={item.slug} item={item} onSelect={onSelect} />
         ))}
